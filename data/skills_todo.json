@@ -1,0 +1,13 @@
+{
+  "skills": [
+    {
+      "name": "skill-001-llamaindex-entity-extraction",
+      "keyword": "LlamaIndex entity extraction from text",
+      "description": "Extract named entities from documents using LlamaIndex EntityExtractor",
+      "research_strategy": "context7_first",
+      "min_context_tokens": 15000,
+      "max_distilled_tokens": 8000,
+      "references": []
+    }
+  ]
+}

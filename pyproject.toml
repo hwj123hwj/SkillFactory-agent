@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "skillfactory-agent"
+version = "0.1.0"
+description = "自动孵化 Claude Skills 的智能 Agent"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "SkillFactory Team" },
+]
+license = { text = "MIT" }
+
+dependencies = [
+    "claude-agent-sdk>=0.1.27,<0.2.0",     # Claude Agent SDK
+    "anthropic>=0.24.0",           # Claude SDK - AI Agent Framework
+    "crawl4ai>=0.3.0",             # 网页爬虫 - 文档抓取
+    "pydantic>=2.0",               # 数据验证和设置管理
+    "python-dotenv>=1.0",          # 环境变量管理
+    "httpx>=0.24.0",               # HTTP 客户端 - Context7 MCP
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",                 # 测试框架
+    "pytest-asyncio>=0.21",        # 异步测试支持
+    "pytest-cov>=4.0",             # 代码覆盖率
+    "black>=23.0",                 # 代码格式化
+    "ruff>=0.1.0",                 # 快速 Linter
+    "mypy>=1.0",                   # 类型检查
+]
+
+[project.scripts]
+skillfactory = "src.cli:main"
+
+[tool.uv]
+managed = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.uv.sources]
+# 可选：指定特定的源
+# anthropic = { path = "../anthropic-python" }
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311']
+
+[tool.ruff]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # line-too-long，交给 black 处理
+line-length = 100
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # 可选：改为 true 来要求类型注解
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run python:*)",
+      "mcp__github__get_me",
+      "mcp__github__create_repository"
+    ]
+  }
+}
