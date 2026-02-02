@@ -56,19 +56,17 @@ class SkillFactoryWorker:
 
         async with ClaudeSDKClient(options=self.client_options) as client:
             self.logger.info("Worker start: %s", self.skill_spec.name)
+            
+            # Round 1: Research
             await self._run_round(client, self._prompt_research())
+            
+            # Round 2: Drafting (生成简单的 demo.py 和 requirements.txt)
             await self._run_round(client, self._prompt_drafting())
-
-            for attempt in range(1, Config.MAX_RETRY_ATTEMPTS + 1):
-                await self._run_round(client, self._prompt_test(attempt), check_test_status=True)
-                if self._last_test_success:
-                    break
-
-            if self._last_test_success:
-                await self._run_round(client, self._prompt_distill())
-                status = "success"
-            else:
-                status = "failed"
+            
+            # Round 3: Distill (生成最终 SKILL.md)
+            await self._run_round(client, self._prompt_distill())
+            
+            status = "success"
             self.logger.info("Worker end: %s (%s)", self.skill_spec.name, status)
 
         return SkillResult(
@@ -98,10 +96,21 @@ class SkillFactoryWorker:
         parts: list[str] = []
 
         async def _collect() -> None:
-            async for message in client.receive_response():
-                text = self._message_to_text(message)
-                if text:
-                    parts.append(text)
+            try:
+                async for message in client.receive_response():
+                    # 跳过 SystemMessage，只处理 AssistantMessage 和 ResultMessage
+                    if hasattr(message, "content") and isinstance(getattr(message, "content"), list):
+                        # AssistantMessage 有 content: list[ContentBlock]
+                        for block in getattr(message, "content"):
+                            if hasattr(block, "text"):
+                                text = str(getattr(block, "text"))
+                                if text.strip():
+                                    parts.append(text)
+                    # 当收到 ResultMessage 时停止
+                    if hasattr(message, "subtype") and getattr(message, "subtype") == "final":
+                        break
+            except Exception as e:
+                self.logger.debug("Error collecting response (%s): %s", self.skill_spec.name, e)
 
         try:
             await asyncio.wait_for(_collect(), timeout=Config.ROUND_TIMEOUT)
@@ -115,6 +124,7 @@ class SkillFactoryWorker:
 
     @staticmethod
     def _message_to_text(message: object) -> str:
+        """已废弃，改为在 _collect_response_text 中直接处理"""
         if hasattr(message, "content"):
             content = getattr(message, "content")
             if isinstance(content, list):
@@ -158,8 +168,8 @@ class SkillFactoryWorker:
 执行流程：
 
 【第一步】调用 Context 7 MCP 获取官方文档
-1. 使用 mcp__context7__query-docs(keyword=\"{self.skill_spec.keyword}\")
-2. 使用 mcp__context7__resolve-library-id(keyword=\"{self.skill_spec.keyword}\")
+1. 使用 mcp__context7__query-docs(keyword="{self.skill_spec.keyword}")
+2. 使用 mcp__context7__resolve-library-id(keyword="{self.skill_spec.keyword}")
 3. 评估返回的上下文大小（token 数）
 
 【第二步】知识蒸馏（关键！）
@@ -170,7 +180,7 @@ class SkillFactoryWorker:
   d) 列出 3-5 个常见错误和最佳实践
 
   【重要】舍弃以下内容：
-  - 与 \"{self.skill_spec.keyword}\" 无直接关系的章节
+  - 与 "{self.skill_spec.keyword}" 无直接关系的章节
   - 已过时的版本信息
   - 冗长的理论介绍（保留 1 段总结即可）
 
@@ -202,7 +212,7 @@ class SkillFactoryWorker:
 
 【第一步】本地爬取官方文档
 1. 使用 skill-browser-crawl 爬取：
-   - 官方文档（HTML → Markdown）
+   - 官方文档（HTML -> Markdown）
    - GitHub 仓库信息
    - PyPI 包信息（如适用）
 2. 文档保存到本地 ~/.ai_skills/docs/
@@ -228,8 +238,8 @@ class SkillFactoryWorker:
 
 【第一步】并行获取文档（两个来源同时进行）
 来源 A：Context 7 MCP
-  - mcp__context7__query-docs(keyword=\"{self.skill_spec.keyword}\")
-  - mcp__context7__resolve-library-id(keyword=\"{self.skill_spec.keyword}\")
+  - mcp__context7__query-docs(keyword="{self.skill_spec.keyword}")
+  - mcp__context7__resolve-library-id(keyword="{self.skill_spec.keyword}")
 
 来源 B：本地爬取
   - 使用 skill-browser-crawl 爬取官方文档
@@ -249,58 +259,32 @@ class SkillFactoryWorker:
 
     def _prompt_drafting(self) -> str:
         return f"""
-你现在有了完整的文档背景。基于刚才整理的文档，生成一个可运行的演示代码。
+现在基于研究结果创建演示代码（简化版）。
 
-要求：
+任务：
 1. 使用 Write 工具创建 ~/.ai_skills/{self.skill_spec.name}/scripts/demo.py
-   - 代码必须可以直接运行（无交互式输入）
-   - 包含 assert 语句验证功能是否正确
-   - 清晰的代码注释
-   - 演示 {self.skill_spec.keyword} 的核心功能
+   - 代码长度：100-150 行（简洁）
+   - 只演示核心功能，不要复杂的多个测试用例
+   - 代码必须可以直接运行
+   - 包含 3-5 个 assert 语句验证正确性
 
 2. 使用 Write 工具创建 ~/.ai_skills/{self.skill_spec.name}/scripts/requirements.txt
-   - 列出所有依赖包及具体版本号
-   - 使用 == 而不是 * 或 ~
-""".strip()
+   - 列出核心依赖及版本号（使用 ==）
+   - 不需要列出全部传递依赖
 
-    def _prompt_test(self, attempt: int) -> str:
-        return f"""
-现在测试代码的可运行性。这是第 {attempt}/{Config.MAX_RETRY_ATTEMPTS} 次尝试。
-
-你需要：
-1. 使用 Bash 工具执行以下命令（带 {Config.DOCKER_TIMEOUT} 秒超时保护）：
-
-   timeout {Config.DOCKER_TIMEOUT} docker run --rm -v ~/.ai_skills/{self.skill_spec.name}/scripts:/app {Config.DOCKER_IMAGE} bash -c "
-   cd /app && \
-   pip install -q -r requirements.txt && \
-   python demo.py
-   "
-
-2. 检查返回的输出：
-   - 若包含 "AssertionError": 说明逻辑错误，需要修复
-   - 若包含 "ModuleNotFoundError": 说明依赖缺失或版本不对，需要修复
-   - 若包含 "Timeout": 说明代码执行超时，需要优化或检查逻辑
-   - 若包含其他错误: 根据具体情况修复
-
-3. 若失败，分析原因：
-   - 使用 Edit 工具修改 demo.py 或 requirements.txt
-   - 重新执行 docker run 命令
-   - 最多重试 {Config.MAX_RETRY_ATTEMPTS} 次
-
-   第 {Config.MAX_RETRY_ATTEMPTS + 1} 次失败则停止，记录为"待人工审查"
-
-4. 若成功（返回 0，无异常），进入下一轮
+完成后直接结束，下一轮会生成 SKILL.md。
 """.strip()
 
     def _prompt_distill(self) -> str:
         return f"""
-代码已验证可运行！现在为这个技能编写完整的文档并打包。
+研究完成！现在为这个技能编写 SKILL.md 文档。
 
 你需要：
 
 1. 使用 Write 工具创建 ~/.ai_skills/{self.skill_spec.name}/SKILL.md
 
-   格式参考 (来自 .agents/skills/skill-creator/SKILL.md):
+   文件格式应为：
+
    ---
    name: {self.skill_spec.name}
    description: {self.skill_spec.description}. Use this skill when you need to {self.skill_spec.keyword}.
@@ -309,30 +293,25 @@ class SkillFactoryWorker:
    # {self.skill_spec.name}
 
    ## Overview
-   [核心概念，2-3 段]
+   基于刚才研究的核心概念，用 2-3 段落描述该技能的作用和适用场景。
 
    ## Prerequisites
-   [依赖说明，包括 Python 版本、系统库]
+   列出所需的 Python 版本、环境和其他依赖说明。
 
    ## Quick Start
-   [基本使用示例]
+   提供最简单的可运行使用示例。
 
-   ## API Reference
-   [主要函数/类的说明]
+   ## Key Concepts
+   列出在研究中发现的关键概念、API、函数或类。
+
+   ## Common Use Cases
+   列举 2-3 个实际应用场景。
 
    ## Best Practices
-   [最佳实践和注意事项]
-
-   ## Troubleshooting
-   [常见错误和解决方案]
+   总结 3-5 个最佳实践和注意事项。
 
 2. 若需要，使用 Write 工具创建其他文件：
-   - ~/.ai_skills/{self.skill_spec.name}/references/api_docs.md
-   - ~/.ai_skills/{self.skill_spec.name}/assets/example.json 等
+   - ~/.ai_skills/{self.skill_spec.name}/references/research.md (如果有额外的研究总结)
 
-3. 完成后，使用 Bash 工具执行打包命令：
-
-   python ~/.agents/skills/skill-creator/scripts/package_skill.py ~/.ai_skills/{self.skill_spec.name}
-
-   这会生成 ~/.ai_skills/{self.skill_spec.name}.skill 文件
+完成后，任务就结束了。
 """.strip()

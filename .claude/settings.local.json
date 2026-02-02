@@ -3,7 +3,10 @@
     "allow": [
       "Bash(uv run python:*)",
       "mcp__github__get_me",
-      "mcp__github__create_repository"
+      "mcp__github__create_repository",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)"
     ]
   }
 }

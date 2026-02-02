@@ -28,7 +28,7 @@ class Config:
     LOGS_DIR = ROOT_DIR / "logs"
 
     # ===== Claude SDK 配置 =====
-    CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet")
+    CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-4-5-sonnet")
     PERMISSION_MODE = os.getenv("PERMISSION_MODE", "bypassPermissions")
 
     # 自定义 API 配置（用于使用其他厂商的兼容 API）
