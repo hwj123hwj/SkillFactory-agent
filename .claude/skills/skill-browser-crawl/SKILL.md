@@ -1,3 +1,8 @@
+---
+name: skill-browser-crawl
+description: Browser-based web crawler for documentation sites. Use when you need to crawl web pages with JavaScript rendering, extract content as markdown, or recursively crawl entire documentation sites. Supports deep crawling with filtering options.
+---
+
 # Browser-Based Web Crawler
 
 Lightweight browser-based web crawling for practical use cases. Use when users need to crawl web pages with JavaScript rendering, extract content as markdown, or recursively crawl documentation sites.

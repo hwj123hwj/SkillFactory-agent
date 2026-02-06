@@ -1,12 +1,12 @@
 {
   "skills": [
     {
-      "name": "skill-001-llamaindex-entity-extraction",
-      "keyword": "LlamaIndex entity extraction from text",
-      "description": "Extract named entities from documents using LlamaIndex EntityExtractor",
+      "name": "skill-test-requests-simple",
+      "keyword": "Python requests library basic HTTP GET POST",
+      "description": "Learn how to use Python requests library for basic HTTP requests",
       "research_strategy": "context7_first",
-      "min_context_tokens": 15000,
-      "max_distilled_tokens": 8000,
+      "min_context_tokens": 10000,
+      "max_distilled_tokens": 5000,
       "references": []
     }
   ]

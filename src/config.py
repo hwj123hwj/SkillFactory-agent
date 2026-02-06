@@ -10,12 +10,20 @@ class Config:
     """配置管理 - 支持环境变量覆盖"""
 
     # ===== 并发配置 =====
-    MAX_CONCURRENT_WORKERS = int(os.getenv("MAX_CONCURRENT_WORKERS", "3"))
-    WORKER_TIMEOUT = int(os.getenv("WORKER_TIMEOUT", "600"))  # 10分钟
+    # MAX_CONCURRENT_WORKERS: 同时孵化的技能数量
+    # - 1: 串行执行，内存占用最低（推荐 4C4G 服务器）
+    # - 2-3: 并行执行，需要 8GB+ 内存
+    MAX_CONCURRENT_WORKERS = int(os.getenv("MAX_CONCURRENT_WORKERS", "1"))
+    WORKER_TIMEOUT = int(os.getenv("WORKER_TIMEOUT", "900"))  # 15分钟
 
     # ===== Docker 配置 =====
-    DOCKER_IMAGE = os.getenv("DOCKER_IMAGE", "python:3.10-slim")
+    # 使用 alpine 镜像更轻量（~50MB vs ~150MB）
+    DOCKER_IMAGE = os.getenv("DOCKER_IMAGE", "python:3.10-alpine")
     DOCKER_TIMEOUT = int(os.getenv("DOCKER_TIMEOUT", "300"))  # 5分钟
+    
+    # Docker 资源限制（4C4G 服务器）
+    DOCKER_MEMORY_LIMIT = os.getenv("DOCKER_MEMORY_LIMIT", "800m")  # 限制单个容器最多 800MB
+    DOCKER_CPU_LIMIT = os.getenv("DOCKER_CPU_LIMIT", "1.0")  # 限制单个容器最多 1 核
 
     # ===== Worker 配置 =====
     MAX_RETRY_ATTEMPTS = int(os.getenv("MAX_RETRY_ATTEMPTS", "3"))
