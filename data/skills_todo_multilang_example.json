@@ -1,0 +1,34 @@
+{
+  "skills": [
+    {
+      "name": "skill-python-requests",
+      "keyword": "Python requests library HTTP client",
+      "description": "Learn how to use Python requests library",
+      "language": "python",
+      "research_strategy": "context7_first",
+      "min_context_tokens": 10000,
+      "max_distilled_tokens": 5000,
+      "references": []
+    },
+    {
+      "name": "skill-js-axios",
+      "keyword": "JavaScript axios HTTP client",
+      "description": "Learn how to use axios for HTTP requests in JavaScript",
+      "language": "javascript",
+      "research_strategy": "context7_first",
+      "min_context_tokens": 10000,
+      "max_distilled_tokens": 5000,
+      "references": []
+    },
+    {
+      "name": "skill-ts-fetch-api",
+      "keyword": "TypeScript fetch API with types",
+      "description": "Learn how to use fetch API with TypeScript",
+      "language": "typescript",
+      "research_strategy": "context7_first",
+      "min_context_tokens": 10000,
+      "max_distilled_tokens": 5000,
+      "references": []
+    }
+  ]
+}

@@ -24,6 +24,9 @@ class Config:
     # Docker 资源限制（4C4G 服务器）
     DOCKER_MEMORY_LIMIT = os.getenv("DOCKER_MEMORY_LIMIT", "800m")  # 限制单个容器最多 800MB
     DOCKER_CPU_LIMIT = os.getenv("DOCKER_CPU_LIMIT", "1.0")  # 限制单个容器最多 1 核
+    
+    # Docker 镜像加速器（可选）
+    DOCKER_REGISTRY_MIRROR = os.getenv("DOCKER_REGISTRY_MIRROR", "")
 
     # ===== Worker 配置 =====
     MAX_RETRY_ATTEMPTS = int(os.getenv("MAX_RETRY_ATTEMPTS", "3"))
@@ -70,6 +73,9 @@ class Config:
         cls.WORKER_TIMEOUT = int(os.getenv("WORKER_TIMEOUT", "600"))
         cls.DOCKER_IMAGE = os.getenv("DOCKER_IMAGE", "python:3.10-slim")
         cls.DOCKER_TIMEOUT = int(os.getenv("DOCKER_TIMEOUT", "300"))
+        cls.DOCKER_MEMORY_LIMIT = os.getenv("DOCKER_MEMORY_LIMIT", "800m")
+        cls.DOCKER_CPU_LIMIT = os.getenv("DOCKER_CPU_LIMIT", "1.0")
+        cls.DOCKER_REGISTRY_MIRROR = os.getenv("DOCKER_REGISTRY_MIRROR", "")
         cls.MAX_RETRY_ATTEMPTS = int(os.getenv("MAX_RETRY_ATTEMPTS", "3"))
         cls.ROUND_TIMEOUT = int(os.getenv("ROUND_TIMEOUT", "1200"))
         cls.CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet")

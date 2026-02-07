@@ -13,6 +13,7 @@ class SkillSpec:
     description: str
 
     research_strategy: str = "context7_first"  # context7_first | local_first | hybrid
+    language: str = "python"  # python | javascript | typescript
     min_context_tokens: int = 20000
     max_distilled_tokens: int = 10000
 
@@ -26,6 +27,7 @@ class SkillSpec:
             keyword=data["keyword"],
             description=data.get("description", ""),
             research_strategy=data.get("research_strategy", "context7_first"),
+            language=data.get("language", "python"),
             min_context_tokens=int(data.get("min_context_tokens", 20000)),
             max_distilled_tokens=int(data.get("max_distilled_tokens", 10000)),
             references=data.get("references", []) or [],

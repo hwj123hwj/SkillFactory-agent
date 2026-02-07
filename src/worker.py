@@ -10,7 +10,7 @@ from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient
 
 from .config import Config
 from .models import SkillResult, SkillSpec
-from .utils.docker import DockerRunner
+from .utils.docker_multilang import MultiLangDockerRunner
 
 
 class SkillFactoryWorker:
@@ -21,7 +21,7 @@ class SkillFactoryWorker:
         self._last_test_success: bool = False
         self._last_error: str = ""
         self.logger = logging.getLogger("skillfactory")
-        self.docker_runner = DockerRunner()  # Docker 执行器
+        self.docker_runner = MultiLangDockerRunner()  # 多语言 Docker 执行器
 
         env_vars: dict[str, str] = {}
         if Config.ANTHROPIC_BASE_URL:
@@ -95,21 +95,22 @@ class SkillFactoryWorker:
                     self.logger.info(f"Test attempt {attempt}/{Config.MAX_RETRY_ATTEMPTS}")
                     
                     # 读取生成的代码
-                    demo_file = skill_dir / "scripts" / "demo.py"
-                    req_file = skill_dir / "scripts" / "requirements.txt"
+                    demo_file = skill_dir / "scripts" / self._get_code_filename()
+                    req_file = skill_dir / "scripts" / self._get_deps_filename()
                     
                     if not demo_file.exists() or not req_file.exists():
                         self.logger.warning("Code files not found, skipping test")
                         break
                     
                     code = demo_file.read_text(encoding="utf-8")
-                    requirements = req_file.read_text(encoding="utf-8")
+                    dependencies = req_file.read_text(encoding="utf-8")
                     
-                    # 在 Docker 中运行代码
+                    # 在 Docker 中运行代码（传递语言参数）
                     result = await self.docker_runner.run_code(
                         code=code,
-                        requirements=requirements,
+                        dependencies=dependencies,
                         work_dir=skill_dir / "scripts",
+                        language=self.skill_spec.language,
                     )
                     
                     if result.success:
@@ -401,19 +402,49 @@ class SkillFactoryWorker:
     def _prompt_drafting(self) -> str:
         # 使用绝对路径而不是 ~ 路径
         skill_dir = Config.SKILLS_DIR / self.skill_spec.name
+        lang = self._get_language_display_name()
+        code_file = self._get_code_filename()
+        deps_file = self._get_deps_filename()
+        
+        # 根据语言生成不同的说明
+        if self.skill_spec.language == "python":
+            deps_example = """
+例如：
+```
+requests==2.31.0
+numpy==1.24.0
+```
+"""
+        else:  # JavaScript/TypeScript
+            deps_example = """
+例如：
+```json
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "lodash": "^4.17.21"
+  }
+}
+```
+"""
+        
         return f"""
 现在基于研究结果创建演示代码（简化版）。
 
+**目标语言**: {lang}
+
 任务：
-1. 使用 Write 工具创建 {skill_dir}/scripts/demo.py
+1. 使用 Write 工具创建 {skill_dir}/scripts/{code_file}
    - 代码长度：100-150 行（简洁）
    - 只演示核心功能，不要复杂的多个测试用例
    - 代码必须可以直接运行
-   - 包含 3-5 个 assert 语句验证正确性
+   - 包含 3-5 个 assert 语句验证正确性（或等效的测试代码）
 
-2. 使用 Write 工具创建 {skill_dir}/scripts/requirements.txt
-   - 列出核心依赖及版本号（使用 ==）
-   - 不需要列出全部传递依赖
+2. 使用 Write 工具创建 {skill_dir}/scripts/{deps_file}
+   - 列出核心依赖及版本号
+   {deps_example}
 
 完成后直接结束，下一轮会进行代码测试和验证。
 """.strip()
@@ -422,9 +453,14 @@ class SkillFactoryWorker:
         """生成修复代码的 Prompt"""
         error_info = result.stderr or result.error or "Unknown error"
         skill_dir = Config.SKILLS_DIR / self.skill_spec.name
+        code_file = self._get_code_filename()
+        deps_file = self._get_deps_filename()
+        lang = self._get_language_display_name()
         
         return f"""
 代码执行失败（第 {attempt}/{Config.MAX_RETRY_ATTEMPTS} 次尝试）。
+
+**语言**: {lang}
 
 错误信息：
 ```
@@ -434,15 +470,15 @@ class SkillFactoryWorker:
 请分析错误原因并修复代码：
 
 1. 常见错误类型：
-   - ModuleNotFoundError: 依赖缺失或版本不对 → 检查 requirements.txt
+   - ModuleNotFoundError/Cannot find module: 依赖缺失或版本不对 → 检查 {deps_file}
    - ImportError: 导入错误 → 检查模块名称和版本
    - AssertionError: 逻辑错误 → 检查代码逻辑
    - SyntaxError: 语法错误 → 检查代码语法
    - TimeoutError: 执行超时 → 优化代码或检查死循环
 
 2. 修复步骤：
-   - 使用 Edit 工具修改 {skill_dir}/scripts/demo.py
-   - 或使用 Edit 工具修改 {skill_dir}/scripts/requirements.txt
+   - 使用 Edit 工具修改 {skill_dir}/scripts/{code_file}
+   - 或使用 Edit 工具修改 {skill_dir}/scripts/{deps_file}
    - 确保修复后的代码可以运行
 
 3. 注意事项：
@@ -498,3 +534,29 @@ class SkillFactoryWorker:
 
 完成后，任务就结束了。
 """.strip()
+
+
+    def _get_code_filename(self) -> str:
+        """根据语言返回代码文件名"""
+        if self.skill_spec.language == "python":
+            return "demo.py"
+        elif self.skill_spec.language == "typescript":
+            return "demo.ts"
+        else:  # javascript
+            return "demo.js"
+
+    def _get_deps_filename(self) -> str:
+        """根据语言返回依赖文件名"""
+        if self.skill_spec.language == "python":
+            return "requirements.txt"
+        else:  # javascript, typescript
+            return "package.json"
+
+    def _get_language_display_name(self) -> str:
+        """返回语言的显示名称"""
+        names = {
+            "python": "Python",
+            "javascript": "JavaScript",
+            "typescript": "TypeScript",
+        }
+        return names.get(self.skill_spec.language, self.skill_spec.language)

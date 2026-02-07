@@ -9,8 +9,10 @@
 - ✅ **自动文档爬取**：使用 skill-browser-crawl 深度爬取官方文档
 - ✅ **智能知识蒸馏**：从海量文档中提取核心概念和最佳实践
 - ✅ **代码自动生成**：生成可运行的演示代码和依赖清单
+- ✅ **多语言支持**：支持 Python、JavaScript、TypeScript
 - ✅ **多策略研究**：支持 Context7 优先、本地优先、混合策略
 - ✅ **并发任务处理**：支持串行/并行孵化多个技能
+- ✅ **Docker 沙盒验证**：自动在容器中运行代码并验证
 
 ## 🚀 快速开始
 
@@ -181,6 +183,26 @@ docker version
 sudo systemctl start docker
 ```
 
+### Docker 镜像拉取失败（中国大陆）
+
+**症状**：
+```
+Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: request canceled
+```
+
+**解决方案**：配置 Docker 镜像加速器
+
+```bash
+# 编辑 .env 文件，推荐使用 1Panel 镜像（免费，无需注册，速度快）
+DOCKER_REGISTRY_MIRROR=https://docker.1panel.live
+
+# 或使用其他镜像加速器
+# DOCKER_REGISTRY_MIRROR=https://docker.xuanyuan.me
+# DOCKER_REGISTRY_MIRROR=https://docker.chenby.cn
+```
+
+详细配置请查看 [Docker 镜像加速指南](docs/DOCKER_MIRROR.md)
+
 ### Skill 未加载
 
 **症状**：日志显示 "skill-browser-crawl not found"
@@ -199,12 +221,15 @@ cat .claude/skills/skill-browser-crawl/SKILL.md
 完整文档请查看 [docs/](docs/) 目录：
 
 - **[快速开始](docs/QUICKSTART.md)** - 5 分钟快速上手 ⭐ 推荐新手
+- **[多语言支持](docs/MULTILANG_SUPPORT.md)** - Python/JavaScript/TypeScript 支持 🌐 新功能
+- **[Docker 镜像加速](docs/DOCKER_MIRROR.md)** - 解决镜像拉取慢的问题 🚀 中国大陆必看
 - **[项目结构](docs/PROJECT_STRUCTURE.md)** - 项目结构说明
 - **[产品需求文档](docs/PRD.md)** - 当前实现状态
 - **[Agent SDK 参考](docs/Agent%20SDK%20参考%20-%20Python.md)** - Claude Agent SDK 参考
 - **[文档索引](docs/DOCS.md)** - 完整文档导航
 
-> 💡 **提示**：第一次使用？从 [快速开始指南](docs/QUICKSTART.md) 开始！
+> 💡 **提示**：第一次使用？从 [快速开始指南](docs/QUICKSTART.md) 开始！  
+> 🇨🇳 **中国大陆用户**：请先配置 [Docker 镜像加速](docs/DOCKER_MIRROR.md)
 
 ## ⚡ 性能优化建议
 
@@ -245,5 +270,5 @@ MIT License
 
 ---
 
-**版本**: v2.0  
-**最后更新**: 2026-02-06
+**版本**: v2.1  
+**最后更新**: 2026-02-07

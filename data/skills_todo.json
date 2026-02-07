@@ -1,9 +1,10 @@
 {
   "skills": [
     {
-      "name": "skill-test-requests-simple",
-      "keyword": "Python requests library basic HTTP GET POST",
-      "description": "Learn how to use Python requests library for basic HTTP requests",
+      "name": "skill-test-js-axios",
+      "keyword": "JavaScript axios HTTP client basic usage",
+      "description": "Learn how to use axios library for HTTP requests in JavaScript",
+      "language": "javascript",
       "research_strategy": "context7_first",
       "min_context_tokens": 10000,
       "max_distilled_tokens": 5000,

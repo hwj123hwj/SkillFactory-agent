@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-02-06T14:17:17.176591+00:00",
+  "generated_at": "2026-02-07T02:49:22.771935+00:00",
   "results": [
     {
-      "skill_name": "skill-test-requests-simple",
-      "status": "success",
-      "skill_dir": "C:\\Users\\黄威健\\.ai_skills\\skill-test-requests-simple",
-      "skill_file": "C:\\Users\\黄威健\\.ai_skills\\skill-test-requests-simple.skill",
+      "skill_name": "skill-test-js-axios",
+      "status": "partial_success",
+      "skill_dir": "C:\\Users\\黄威健\\.ai_skills\\skill-test-js-axios",
+      "skill_file": "C:\\Users\\黄威健\\.ai_skills\\skill-test-js-axios.skill",
       "demo_code": "",
-      "error_log": "",
-      "created_at": "2026-02-06T14:17:17.175521+00:00"
+      "error_log": "Unable to find image 'node:20-alpine' locally\ndocker: Error response from daemon: Get \"https://registry-1.docker.io/v2/\": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)\n\nRun 'docker run --help' for more information\n",
+      "created_at": "2026-02-07T02:49:22.771156+00:00"
     }
   ]
 }
